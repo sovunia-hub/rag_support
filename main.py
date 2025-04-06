@@ -1,11 +1,14 @@
 import os
 os.environ["HF_HOME"] = "C:/Games/hf/huggingface"
 
+import vector_store
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from transformers import BitsAndBytesConfig
+import time
 
 tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3")
-from transformers import BitsAndBytesConfig
+
 
 bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
 
@@ -14,13 +17,24 @@ model = AutoModelForCausalLM.from_pretrained(
     quantization_config=bnb_config,
     device_map="auto"
 )
-prompt = 'Как мне провезти оружие в аэропорте?'
-input_ids = tokenizer(prompt, return_tensors="pt").to(model.device)
 
-import time
+question = 'Как мне провезти оружие в аэропорте?'
 
 start = time.time()
 
+vs = vector_store.VectorStore()
+retrieved_chunks = vs.find_similar(question, 5)
+
+prompt = f"""
+Context information is below.
+---------------------
+{retrieved_chunks}
+---------------------
+Given the context information and not prior knowledge, answer the query.
+Query: {question}
+Answer:
+"""
+input_ids = tokenizer(prompt, return_tensors="pt").to(model.device)
 outputs = model.generate(
     **input_ids,
     max_new_tokens=400,

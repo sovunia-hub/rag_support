@@ -46,7 +46,7 @@ def fetch_content_main_page() -> Optional[List[Document]]:
             if element.name == 'ul' and 'list-inline' in element.get('class', []):
                 break
 
-            if element.name == 'p':
+            if element.name in ['p', 'h5']:
                 nested_ps = element.find_all('p')
                 for nested in nested_ps:
                     nested.unwrap()
@@ -54,7 +54,7 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                 if content:
                     text.append(content)
 
-            elif element.name in ['h1', 'h2', 'h3', 'h4', 'h5']:
+            elif element.name in ['h1', 'h2', 'h3', 'h4']:
                 content = element.get_text(strip=True)
                 if content:
                     text.append(f"## {content}")

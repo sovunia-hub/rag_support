@@ -1,4 +1,6 @@
 import os
+os.environ["HF_HOME"] = "C:/Games/hf/huggingface"
+
 import data_loader
 import faiss
 import pickle
@@ -12,14 +14,17 @@ class VectorStore:
     def __init__(self):
         self.index_path = "data/vector_index.faiss"
         self.chunks_path = "data/chunks.pkl"
-        self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
+        self.embedding_model = SentenceTransformer(
+            'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
+        )
         self.chunks = None
         self.index = None
         self.load_index()
 
     def create_index(self):
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500, chunk_overlap=100, add_start_index=True
+            is_separator_regex=True, separators=['##'],
+            chunk_size=1000, chunk_overlap=50
         )
         documents = data_loader.fetch_content_main_page()
         self.chunks = text_splitter.split_documents(documents)
@@ -67,4 +72,3 @@ class VectorStore:
 
 if __name__ == "__main__":
     vs = VectorStore()
-    vs.find_similar("Как провезти оружие?")
