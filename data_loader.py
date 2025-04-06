@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 import requests
 from bs4 import BeautifulSoup
 from langchain.docstore.document import Document
@@ -24,7 +24,7 @@ def get_session() -> Optional[requests.Session]:
 
 def fetch_content_main_page() -> Optional[List[Document]]:
 
-    def fetch_content_url(url: str) -> Optional[str]:
+    def fetch_content_url(url: str) -> Tuple[Optional[str], Optional[Dict]]:
         response = session.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -38,7 +38,8 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                 if full_link not in main_links:
                     main_links.append(full_link)
 
-        text = [f"# {soup.find('title').get_text(strip=True)}"]
+        text = []
+        title = {'title': f"# {soup.find('title').get_text(strip=True)}"}
 
         for element in main_content.find_all(['ul', 'p', 'h1', 'h2', 'h3', 'h4', 'h5'], recursive=True):
 
@@ -46,6 +47,9 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                 break
 
             if element.name == 'p':
+                nested_ps = element.find_all('p')
+                for nested in nested_ps:
+                    nested.unwrap()
                 content = element.get_text(strip=True)
                 if content:
                     text.append(content)
@@ -61,8 +65,8 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                     if content:
                         text.append(f"- {content}")
         if len(text) == 1:
-            return None
-        return '\n'.join(text)
+            return None, None
+        return '\n'.join(text), title
 
     main_url = "https://help.myagent.online/how-to/"
     session = get_session()
@@ -77,8 +81,8 @@ def fetch_content_main_page() -> Optional[List[Document]]:
 
     documents = []
     for main_link in main_links:
-        page_content = fetch_content_url(main_link)
+        page_content, metadata = fetch_content_url(main_link)
         if page_content:
-            documents.append(Document(page_content=page_content))
+            documents.append(Document(page_content=page_content, metadata=metadata))
     print(f"Создано {len(documents)} документов")
     return documents
