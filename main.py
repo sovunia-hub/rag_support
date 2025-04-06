@@ -1,7 +1,4 @@
 import os
-from bs4 import BeautifulSoup
-import requests
-import data_loader
 os.environ["HF_HOME"] = "C:/Games/hf/huggingface"
 
 from transformers import AutoModelForCausalLM, AutoTokenizer

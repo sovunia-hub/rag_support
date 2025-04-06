@@ -82,6 +82,3 @@ def fetch_content_main_page() -> Optional[List[Document]]:
             documents.append(Document(page_content=page_content))
     print(f"Создано {len(documents)} документов")
     return documents
-
-if __name__ == "__main__":
-    fetch_content_main_page()
