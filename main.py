@@ -9,7 +9,6 @@ import time
 
 tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3")
 
-
 bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
 
 model = AutoModelForCausalLM.from_pretrained(
@@ -18,7 +17,7 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto"
 )
 
-question = 'Как мне провезти оружие в аэропорте?'
+question = 'Как мне вернуть за билет компании Победа?'
 
 start = time.time()
 
@@ -26,13 +25,13 @@ vs = vector_store.VectorStore()
 retrieved_chunks = vs.find_similar(question, 5)
 
 prompt = f"""
-Context information is below.
+Контекстная информация находится ниже
 ---------------------
 {retrieved_chunks}
 ---------------------
-Given the context information and not prior knowledge, answer the query.
-Query: {question}
-Answer:
+С полученной инормацией и без дополнительных знаний ответь на вопрос на языке вопроса
+Вопрос: {question}
+Ответ:
 """
 input_ids = tokenizer(prompt, return_tensors="pt").to(model.device)
 outputs = model.generate(

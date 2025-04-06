@@ -69,6 +69,3 @@ class VectorStore:
         for d, i in zip(dists[0], inds.tolist()[0]):
             print(d, self.chunks[i])
         return retrieved_chunk
-
-if __name__ == "__main__":
-    vs = VectorStore()
