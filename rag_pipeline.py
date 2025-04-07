@@ -21,14 +21,17 @@ class RagPipeline():
 
     def generate(self, question:str) -> Tuple[str, float]:
         start = time.time()
-        retrieved_chunks = self.vs.find_similar(question, 5)
+        retrieved_chunks = self.vs.find_similar(question, 2)
 
         prompt = f"""
         Контекстная информация находится ниже
         ---------------------
         {retrieved_chunks}
         ---------------------
-        С полученной инормацией и без дополнительных знаний ответь на вопрос на языке вопроса
+        На основе только полученной информации ответь на вопрос
+        Если информация не подходит напиши что не можешь ответить
+        На вопрос отвечай кратко
+        Если информации недостаточно чтобы ответить на вопрос уточни
         Вопрос: {question}
         Ответ:
         """
@@ -37,8 +40,8 @@ class RagPipeline():
             **input_ids,
             max_new_tokens=400,
             eos_token_id=self.tokenizer.eos_token_id,          # меньше — быстрее
-            do_sample=False,            # без сэмплинга — быстрее
-            num_beams=1,                # без beam search
+            #do_sample=False,            # без сэмплинга — быстрее
+            #num_beams=1,                # без beam search
             use_cache=True              # кэширование внимания
         )
 

@@ -27,11 +27,10 @@ class VectorStore:
             chunk_size=1000, chunk_overlap=50
         )
         documents = data_loader.fetch_content_main_page()
-        self.chunks = text_splitter.split_documents(documents)
+        self.chunks = documents #text_splitter.split_documents(documents)
         print(f"Всего создано чанков: {len(self.chunks)}")
-        print(f"Пример чанка:\n{self.chunks[0].page_content[:1000]}...")
 
-        text_embeddings = self.embedding_model.encode([chunk.page_content for chunk in self.chunks])
+        text_embeddings = self.embedding_model.encode([chunk.metadata["title"] for chunk in self.chunks])
         self.index = faiss.IndexFlatL2(text_embeddings.shape[1])
         self.index.add(text_embeddings)
         print("Векторное хранилище успешно создано")

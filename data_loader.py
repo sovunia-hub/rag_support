@@ -24,7 +24,7 @@ def get_session() -> Optional[requests.Session]:
 
 def fetch_content_main_page() -> Optional[List[Document]]:
 
-    def fetch_content_url(url: str) -> Tuple[Optional[str], Optional[Dict]]:
+    def fetch_content_url(url: str) -> Optional[List[Document]]:
         response = session.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -39,7 +39,9 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                     main_links.append(full_link)
 
         text = []
-        title = {'title': f"# {soup.find('title').get_text(strip=True)}"}
+        docs = []
+        title = f"# {soup.find('title').get_text(strip=True)}"
+        header = ""
 
         for element in main_content.find_all(['ul', 'p', 'h1', 'h2', 'h3', 'h4', 'h5'], recursive=True):
 
@@ -57,6 +59,10 @@ def fetch_content_main_page() -> Optional[List[Document]]:
             elif element.name in ['h1', 'h2', 'h3', 'h4']:
                 content = element.get_text(strip=True)
                 if content:
+                    if len(text) != 0:
+                        docs.append(Document(page_content='\n'.join(text), metadata={"title": title + header}))
+                        text = []
+                    header = content
                     text.append(f"## {content}")
 
             elif element.name == 'ul':
@@ -64,9 +70,12 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                     content = li.get_text(strip=True)
                     if content:
                         text.append(f"- {content}")
-        if len(text) == 1:
-            return None, None
-        return '\n'.join(text), title
+        page_content = '\n'.join(text)
+        if page_content:
+            docs.append(Document(page_content=page_content, metadata={"title": title + ' ' + header}))
+        if len(docs) > 0:
+            return docs
+        return None
 
     main_url = "https://help.myagent.online/how-to/"
     session = get_session()
@@ -81,8 +90,8 @@ def fetch_content_main_page() -> Optional[List[Document]]:
 
     documents = []
     for main_link in main_links:
-        page_content, metadata = fetch_content_url(main_link)
-        if page_content:
-            documents.append(Document(page_content=page_content, metadata=metadata))
+        new_docs = fetch_content_url(main_link)
+        if new_docs:
+            documents.extend(new_docs)
     print(f"Создано {len(documents)} документов")
     return documents
