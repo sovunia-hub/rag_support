@@ -23,14 +23,14 @@ class VectorStore:
 
     def create_index(self):
         text_splitter = RecursiveCharacterTextSplitter(
-            is_separator_regex=True, separators=['##'],
-            chunk_size=1000, chunk_overlap=50
+            #is_separator_regex=True, separators=['##'],
+            chunk_size=500, chunk_overlap=100
         )
         documents = data_loader.fetch_content_main_page()
-        self.chunks = documents #text_splitter.split_documents(documents)
+        self.chunks = text_splitter.split_documents(documents)
         print(f"Всего создано чанков: {len(self.chunks)}")
 
-        text_embeddings = self.embedding_model.encode([chunk.metadata["title"] for chunk in self.chunks])
+        text_embeddings = self.embedding_model.encode([chunk.page_content for chunk in self.chunks])
         self.index = faiss.IndexFlatL2(text_embeddings.shape[1])
         self.index.add(text_embeddings)
         print("Векторное хранилище успешно создано")
@@ -61,7 +61,7 @@ class VectorStore:
         #     index = faiss.index_cpu_to_gpu(res, 0, index)
         self.create_index()
 
-    def find_similar(self, question:str, k:int=10):
+    def find_similar(self, question:str, k:int=5):
         question_embedding = np.array(self.embedding_model.encode(question))
         dists, inds = self.index.search(question_embedding.reshape(1, -1), k=k)
         retrieved_chunk = [self.chunks[i] for i in inds.tolist()[0]]

@@ -40,13 +40,13 @@ def fetch_content_main_page() -> Optional[List[Document]]:
 
         text = []
         docs = []
-        title = f"# {soup.find('title').get_text(strip=True)}"
+        title = soup.find('title').get_text(strip=True).replace(" / Мой Агент", ".")
         header = ""
 
         for element in main_content.find_all(['ul', 'p', 'h1', 'h2', 'h3', 'h4', 'h5'], recursive=True):
 
             if element.name == 'ul' and 'list-inline' in element.get('class', []):
-                break
+                continue
 
             if element.name in ['p', 'h5']:
                 nested_ps = element.find_all('p')
@@ -60,7 +60,7 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                 content = element.get_text(strip=True)
                 if content:
                     if len(text) != 0:
-                        docs.append(Document(page_content='\n'.join(text), metadata={"title": title + header}))
+                        docs.append(Document(page_content='\n'.join(text), metadata={"title": title + ' ' + header}))
                         text = []
                     header = content
                     text.append(f"## {content}")
@@ -87,7 +87,12 @@ def fetch_content_main_page() -> Optional[List[Document]]:
     linker_div = main_soup.find('div', class_='linker')
     main_links = linker_div.find_all('a')
     main_links = ["https://help.myagent.online/" + link['href'] for link in main_links]
-
+    ## test
+    #main_links = ['https://help.myagent.online/how-to/aviabiletyi/faq-po-aviabiletam/',
+    #          'https://help.myagent.online/how-to/rail/faq-rails',
+    #          'https://help.myagent.online/how-to/hotels/oteli-faq',
+    #          'https://help.myagent.online/how-to/insurance/strachovanie-chasto-zadavaemyie-voprosyi']
+    ###
     documents = []
     for main_link in main_links:
         new_docs = fetch_content_url(main_link)
