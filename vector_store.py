@@ -6,7 +6,6 @@ import faiss
 import pickle
 from sentence_transformers import SentenceTransformer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
 import numpy as np
 
 
@@ -19,15 +18,18 @@ class VectorStore:
         )
         self.chunks = None
         self.index = None
+        self.documents = None
         self.load_index()
+
+    def get_documents(self):
+        return self.chunks
 
     def create_index(self):
         text_splitter = RecursiveCharacterTextSplitter(
-            #is_separator_regex=True, separators=['##'],
-            chunk_size=500, chunk_overlap=100
+            chunk_size=1000, chunk_overlap=500
         )
-        documents = data_loader.fetch_content_main_page()
-        self.chunks = text_splitter.split_documents(documents)
+        self.documents = data_loader.fetch_content_main_page()
+        self.chunks = text_splitter.split_documents(self.documents)
         print(f"Всего создано чанков: {len(self.chunks)}")
 
         text_embeddings = self.embedding_model.encode([chunk.page_content for chunk in self.chunks])
@@ -38,10 +40,6 @@ class VectorStore:
         self.save_index()
 
     def save_index(self):
-        # if self.use_gpu:
-        #     index_cpu = faiss.index_gpu_to_cpu(self.index)
-        #     faiss.write_index(index_cpu, self.index_path)
-        # else:
         faiss.write_index(self.index, self.index_path)
         with open(self.chunks_path, 'wb') as f:
             pickle.dump(self.chunks, f)
@@ -56,9 +54,6 @@ class VectorStore:
                 self.chunks = pickle.load(f)
             return
         print("[INFO] Creating new FAISS index...")
-        # if self.use_gpu:
-        #     res = faiss.StandardGpuResources()
-        #     index = faiss.index_cpu_to_gpu(res, 0, index)
         self.create_index()
 
     def find_similar(self, question:str, k:int=5):

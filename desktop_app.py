@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QScrollArea, QFrame, QSizePolicy
+    QLabel, QLineEdit, QPushButton, QScrollArea, QMessageBox, QSizePolicy
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
@@ -35,10 +35,8 @@ class RAGDesktopApp(QWidget):
         self.setWindowTitle('RAG Assistant')
         self.setGeometry(100, 100, 700, 600)
 
-        # === Основной вертикальный лэйаут ===
         self.layout = QVBoxLayout(self)
 
-        # === Скроллируемая зона для сообщений ===
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setStyleSheet("background-color: #ffffff;")
@@ -48,7 +46,6 @@ class RAGDesktopApp(QWidget):
         self.scroll_layout.addStretch(1)
         self.scroll_area.setWidget(self.scroll_content)
 
-        # === Нижняя панель ввода ===
         self.input_layout = QHBoxLayout()
         self.input_field = QLineEdit()
         self.input_field.setFont(QFont("Segoe UI", 11))
@@ -60,11 +57,30 @@ class RAGDesktopApp(QWidget):
         self.send_button.clicked.connect(self.on_submit)
         self.input_field.returnPressed.connect(self.on_submit)
 
+        self.clear_button = QPushButton('Очистить')
+        self.clear_button.setFont(QFont("Segoe UI", 10))
+        self.clear_button.clicked.connect(self.clear_history)
+
         self.input_layout.addWidget(self.input_field)
         self.input_layout.addWidget(self.send_button)
+        self.input_layout.addWidget(self.clear_button)
 
         self.layout.addWidget(self.scroll_area)
         self.layout.addLayout(self.input_layout)
+
+    def clear_history(self):
+        reply = QMessageBox.question(
+            self,
+            "Очистка истории",
+            "Вы уверены, что хотите очистить историю?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            for i in reversed(range(self.scroll_layout.count() - 1)):
+                widget = self.scroll_layout.itemAt(i).widget()
+                if widget:
+                    widget.setParent(None)
+            self.pipeline.clear_history()
 
     def add_message(self, text, is_user=True):
         bubble = MessageBubble(text, is_user)

@@ -1,27 +1,42 @@
 import os
+
 os.environ["HF_HOME"] = "C:/Games/hf/huggingface"
 
 import vector_store
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
-from transformers import BitsAndBytesConfig
+from generative_model import LLM
 import time
 from typing import Optional, Tuple
 
-class RagPipeline():
+class RagPipeline:
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("yandex/YandexGPT-5-Lite-8B-instruct")#mistralai/Mistral-7B-Instruct-v0.3
-        bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            "yandex/YandexGPT-5-Lite-8B-instruct",
-            quantization_config=bnb_config,
-            device_map="auto"
-        )
+        self.llm = LLM()
         self.vs = vector_store.VectorStore()
+        self.messages = []
 
-    def generate(self, question:str) -> Tuple[str, float]:
+    def clear_history(self):
+        self.messages = []
+
+    def rephrase(self) -> str:
+        prompt = f"""
+        Перефразируй последний вопрос, основываясь строго на представленном контексте переписки.
+
+        <context>
+        {self.messages}
+        </context>
+        Перефразированный вопрос:
+        """
+        new_question = self.llm.generate(prompt=prompt)
+        print(new_question)
+        return new_question
+
+    def generate(self, question:str, save_message:bool=True, return_context:bool = False):
         start = time.time()
-        retrieved_chunks = self.vs.find_similar(question, 5)
+        if save_message:
+            self.messages.append({'Вопрос': question})
+            new_question = self.rephrase()
+        else:
+            new_question = question
+        retrieved_chunks = self.vs.find_similar(new_question, 5)
 
         prompt = f"""
         Ты — чат-бот контактного центра, обученный отвечать на вопросы на основе предоставленных документов.
@@ -32,17 +47,14 @@ class RagPipeline():
         Вопрос пользователя:
         {question}
         
+        Вопросы делятся на категории Авиабилеты, ЖД билеты, Отели, Страховки, Личный кабинет, ЭДО, Баланс.
+        Если вопрос пользователя не точный, уточни необходимую информацию, задав наводящий вопрос.
         Ответь кратко, ясно и по существу, строго основываясь на предоставленном контексте. Если информации недостаточно — честно скажи, что ты не можешь ответить на этот вопрос.
-        Ответ:
+        Результат:
         """
-        input_ids = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-        outputs = self.model.generate(
-            **input_ids,
-            max_new_tokens=400,
-            eos_token_id=self.tokenizer.eos_token_id,
-            #do_sample=False,            # без сэмплинга — быстрее
-            #num_beams=1,                # без beam search
-            use_cache=True              # кэширование внимания
-        )
-
-        return self.tokenizer.decode(outputs[0], skip_special_tokens=True)[len(prompt):].strip(), time.time() - start
+        answer = self.llm.generate(prompt=prompt)
+        if save_message:
+            self.messages.append({'Ответ': answer})
+        if return_context:
+            return answer, retrieved_chunks
+        return answer, time.time() - start
