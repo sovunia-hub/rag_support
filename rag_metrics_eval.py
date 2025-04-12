@@ -4,13 +4,11 @@ os.environ["HF_HOME"] = "C:/Games/hf/huggingface"
 
 from rag_pipeline import RagPipeline
 from generative_model import LLM
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from deepeval.models.base_model import DeepEvalBaseLLM
 from deepeval import evaluate
 from deepeval.test_case import LLMTestCase
 from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric, ContextualPrecisionMetric, ContextualRecallMetric
-import random
 import pickle
 import re
 
@@ -58,7 +56,7 @@ def generate_qa():
 
     # Обрабатываем каждую пару
     qa_pairs = []
-    for block in qa_blocks[:10]:
+    for block in qa_blocks[:9]:
         if block:
             # Разделяем на вопрос и ответ
             parts = block.split('\n', 1)
@@ -75,14 +73,13 @@ def generate_qa():
 
 
 if __name__ == '__main__':
-    #generate_qa()
+    # generate_qa()
     judge = JudgeModel()
     with open('data/tests.pkl', 'rb') as f:
         tests = pickle.load(f)
     print(tests)
     answer_relevancy_metric = AnswerRelevancyMetric(model=judge, threshold=0.7)
-    faithfulness_metric = FaithfulnessMetric(model=judge, threshold=0.7)
     context_precision_metric = ContextualPrecisionMetric(model=judge, threshold=0.7)
     context_recall_metric = ContextualRecallMetric(model=judge, threshold=0.7)
 
-    print(evaluate(test_cases=tests, metrics=[context_recall_metric]))
+    print(evaluate(test_cases=tests[:9], metrics=[answer_relevancy_metric, context_precision_metric, context_recall_metric]))

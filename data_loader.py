@@ -63,7 +63,7 @@ def fetch_content_main_page() -> Optional[List[Document]]:
                         docs.append(Document(page_content='\n'.join(text), metadata={"title": title + ' ' + header}))
                         text = []
                     header = content
-                    text.append(f"## {content}")
+                    text.append(content)
 
             elif element.name == 'ul':
                 for li in element.find_all('li'):
@@ -87,12 +87,6 @@ def fetch_content_main_page() -> Optional[List[Document]]:
     linker_div = main_soup.find('div', class_='linker')
     main_links = linker_div.find_all('a')
     main_links = ["https://help.myagent.online/" + link['href'] for link in main_links]
-    ## test
-    #main_links = ['https://help.myagent.online/how-to/aviabiletyi/faq-po-aviabiletam/',
-    #          'https://help.myagent.online/how-to/rail/faq-rails',
-    #          'https://help.myagent.online/how-to/hotels/oteli-faq',
-    #          'https://help.myagent.online/how-to/insurance/strachovanie-chasto-zadavaemyie-voprosyi']
-    ###
     documents = []
     for main_link in main_links:
         new_docs = fetch_content_url(main_link)
