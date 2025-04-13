@@ -110,7 +110,6 @@ class RAGDesktopApp(QWidget):
             answer, time = self.pipeline.generate(query)
             self.scroll_layout.itemAt(self.scroll_layout.count() - 2).widget().deleteLater()
             self.add_message(answer, is_user=False)
-            print(time)
         except Exception as e:
             self.scroll_layout.itemAt(self.scroll_layout.count() - 2).widget().deleteLater()
             self.add_message(f"Ошибка: {e}", is_user=False)

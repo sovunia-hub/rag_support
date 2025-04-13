@@ -36,7 +36,6 @@ class VectorStore:
         #faiss.normalize_L2(text_embeddings)
         self.index = faiss.IndexFlatL2(text_embeddings.shape[1])
         self.index.add(text_embeddings)
-        print("Векторное хранилище успешно создано")
 
         self.save_index()
 
@@ -44,18 +43,13 @@ class VectorStore:
         faiss.write_index(self.index, self.index_path)
         with open(self.chunks_path, 'wb') as f:
             pickle.dump(self.chunks, f)
-        print(f"[INFO] Index saved to {self.index_path}")
-        print(f"[INFO] Chunks saved to {self.chunks_path}")
 
     def load_index(self):
         if os.path.exists(self.index_path) and os.path.exists(self.chunks_path):
-            print("[INFO] Loading existing index from disk...")
             self.index = faiss.read_index(self.index_path)
             with open(self.chunks_path, 'rb') as f:
                 self.chunks = pickle.load(f)
-            print("[INFO] Index successfully loaded.")
             return
-        print("[INFO] Creating new FAISS index...")
         self.create_index()
 
     def find_similar(self, question:str, k:int=5):
@@ -63,6 +57,4 @@ class VectorStore:
         #faiss.normalize_L2(question_embedding)
         dists, inds = self.index.search(question_embedding, k=k)
         retrieved_chunk = [self.chunks[i] for i in inds.tolist()[0]]
-        for d, i in zip(dists[0], inds.tolist()[0]):
-            print(d, self.chunks[i])
         return retrieved_chunk

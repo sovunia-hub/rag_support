@@ -29,7 +29,6 @@ class RagPipeline:
         Переформулированный вопрос:
         """
         new_question = self.llm.generate(prompt=prompt)
-        print(new_question)
         return new_question
 
     def generate(self, question:str, save_message:bool=True, return_context:bool = False):
@@ -66,6 +65,7 @@ class RagPipeline:
         Результат:
         """
         answer = self.llm.generate(prompt=prompt)
+        print(f'Время: \n\t{time.time() - start}\nВопрос: \n\t{question}\nПерефразированный вопрос: \n\t{new_question}')
         if save_message:
             self.messages.append({'Ответ': answer})
         if return_context:

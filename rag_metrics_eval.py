@@ -32,33 +32,29 @@ class JudgeModel(DeepEvalBaseLLM):
 
 def generate_qa():
     rag = RagPipeline()
-    # documents = random.sample(rag.vs.get_documents(), k=k)
+    documents = random.sample(rag.vs.get_documents(), k=k)
     test_cases = []
-    # llm = LLM()
+    llm = LLM()
 
-    # for doc in documents:
-    #     prompt_q = f"Сгенерируй вопрос на основе контекста:\n\n{doc}"
-    #     question = llm.generate(prompt_q)
-    #
-    #     prompt_a = f"Ответь на вопрос на основе контекста:\n\n{question}\n\nКонтекст: {doc}"
-    #     expected_output = llm.generate(prompt_a)
-    #
-    #     actual_output, retrieval_context = rag.generate(question, save_message=False, return_context=True)
-    #
-    #     # test_cases.append(LLMTestCase(input=question, actual_output=actual_output,
-    #     #             expected_output=expected_output,
-    #     #             retrieval_context=retrieval_context))
-    with open('data/G_QA.txt', 'r', encoding='utf-8') as file:
-        content = file.read()
+    for doc in documents:
+        prompt_q = f"Сгенерируй вопрос на основе контекста:\n\n{doc}"
+        question = llm.generate(prompt_q)
 
-    # Шаблон для поиска вопросов и ответов
+        prompt_a = f"Ответь на вопрос на основе контекста:\n\n{question}\n\nКонтекст: {doc}"
+        expected_output = llm.generate(prompt_a)
+
+        actual_output, retrieval_context = rag.generate(question, save_message=False, return_context=True)
+
+        test_cases.append(LLMTestCase(input=question, actual_output=actual_output,
+                    expected_output=expected_output,
+                    retrieval_context=retrieval_context))
+    # with open('data/G_QA.txt', 'r', encoding='utf-8') as file:
+    #     content = file.read()
+
     qa_blocks = re.split(r'\n\n+', content.strip())
 
-    # Обрабатываем каждую пару
-    qa_pairs = []
-    for block in qa_blocks[:9]:
+    for block in qa_blocks[:20]:
         if block:
-            # Разделяем на вопрос и ответ
             parts = block.split('\n', 1)
             if len(parts) == 2:
                 question = parts[0].strip()
@@ -68,15 +64,16 @@ def generate_qa():
                 test_cases.append(LLMTestCase(input=question, actual_output=actual_output,
                             expected_output=answer,
                             retrieval_context=[doc.page_content for doc in retrieval_context]))
-    with open('data/tests.pkl', 'wb') as f:
-        pickle.dump(test_cases, f)
+    return test_cases
+    # with open('data/tests.pkl', 'wb') as f:
+    #     pickle.dump(test_cases, f)
 
 
 if __name__ == '__main__':
-    # generate_qa()
+    tests = generate_qa()
     judge = JudgeModel()
-    with open('data/tests.pkl', 'rb') as f:
-        tests = pickle.load(f)
+    # with open('data/tests.pkl', 'rb') as f:
+    #     tests = pickle.load(f)
     print(tests)
     answer_relevancy_metric = AnswerRelevancyMetric(model=judge, threshold=0.7)
     context_precision_metric = ContextualPrecisionMetric(model=judge, threshold=0.7)

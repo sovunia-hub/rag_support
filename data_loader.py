@@ -92,5 +92,6 @@ def fetch_content_main_page() -> Optional[List[Document]]:
         new_docs = fetch_content_url(main_link)
         if new_docs:
             documents.extend(new_docs)
-    print(f"Создано {len(documents)} документов")
+    #print(f"Создано {len(documents)} документов")
+    #print(f"Пример документа:\n\t page_content: {documents[5].page_content} \n\t metadata{documents[5].metadata}")
     return documents
